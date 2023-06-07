@@ -74,7 +74,7 @@ void VideoInputUI::readFrameThread(VideoInputUI *viPtr)
 
         int width = 0;
         int height = 0;
-        auto framePtr = viPtr->m_viPtr->readRgbData(width, height);
+        auto framePtr = viPtr->m_viPtr->readSpecFormatData(width, height, VideoInput::PixelFormatBGRA);
         if(framePtr == nullptr)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));

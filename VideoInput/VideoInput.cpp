@@ -97,18 +97,11 @@ bool VideoInput::open(const std::string url, std::string videoSize, std::string 
         }
 
         m_frame = av_frame_alloc();
-        m_rgbFrame = av_frame_alloc();
-        if(m_frame == nullptr || m_rgbFrame == nullptr)
+        if(m_frame == nullptr)
         {
             printLog("alloc frame fail!");
             break;
         }
-
-        //初始化以RGB32为标准的数据空间；
-        int rtn = av_image_get_buffer_size(AV_PIX_FMT_RGB32, m_width, m_height, 1);
-        if(rtn< 0)
-            break;
-        m_rgbBuffer = new unsigned char[rtn];
 
     }while(0);
 
@@ -129,46 +122,109 @@ void VideoInput::close()
     release();
 }
 
-unsigned char *VideoInput::readRgbData(int &width, int &height)
+unsigned char *VideoInput::readSpecFormatData(int &width, int &height, const PixelFormatType &pixelFormat)
 {
     auto frame = readAVFrame();
     if(frame == nullptr)
         return nullptr;
 
-    //初始化转换器上下文，用作转换输出不同格式的帧数据；
-    if(m_swsCtx == nullptr)
+    AVPixelFormat pixFmt = (AVPixelFormat)pixelFormat;
+
+    //已创建的sws context指定的像素格式发生变化;
+    if(m_swsCtx != nullptr && m_orgPixelFormat != frame->format)
     {
-        m_swsCtx = sws_getContext(m_width,
-                                  m_height,
-                                  (AVPixelFormat)frame->format,
-                                  m_width,
-                                  m_height,
-                                  AV_PIX_FMT_RGB32,
-                                  SWS_BICUBIC, nullptr, nullptr, nullptr);
+        sws_freeContext(m_swsCtx);
+        m_swsCtx = nullptr;
+
+        if(m_converBuff != nullptr)
+        {
+            delete[] m_converBuff;
+            m_converBuff = nullptr;
+        }
+
+        av_frame_free(&m_converFrame);
     }
 
-    //把AVFrame的图像数据绑定到指定的buffer；
-    int rtn = av_image_fill_arrays(m_rgbFrame->data, m_rgbFrame->linesize, m_rgbBuffer, AV_PIX_FMT_RGB32, frame->width, frame->height, 1);
+    int rtn = -1;
+    do
+    {
+        //初始化转换器上下文，用作转换输出不同格式的帧数据；
+        if(m_swsCtx == nullptr)
+        {
+            m_orgPixelFormat = frame->format;
+            printLog("pixel format: "+ std::to_string(m_orgPixelFormat));
+            m_swsCtx = sws_getContext(m_width,
+                                      m_height,
+                                      (AVPixelFormat)m_orgPixelFormat,
+                                      m_width,
+                                      m_height,
+                                      pixFmt,
+                                      SWS_BICUBIC, nullptr, nullptr, nullptr);
+            if(m_swsCtx == nullptr)
+                break;
+        }
+
+        if(m_converFrame == nullptr)
+        {
+            m_converFrame = av_frame_alloc();
+            if(m_converFrame == nullptr)
+            {
+                printLog("alloc frame fail!");
+                break;
+            }
+        }
+
+        if(m_converBuff == nullptr)
+        {
+            rtn = av_image_get_buffer_size(pixFmt, m_width, m_height, 1);
+            if(rtn< 0)
+                break;
+            m_converBuff = new unsigned char[rtn];
+        }
+
+        //把AVFrame的图像数据绑定到指定的buffer；
+        rtn = av_image_fill_arrays(m_converFrame->data, m_converFrame->linesize, m_converBuff, pixFmt, frame->width, frame->height, 1);
+        if(rtn< 0)
+            break;
+
+        //YUV-->RGB;
+        sws_scale(m_swsCtx,
+                  (uint8_t const *const*)frame->data,
+                  frame->linesize,
+                  0,
+                  frame->height,
+                  m_converFrame->data,
+                  m_converFrame->linesize);
+
+    }while(0);
+
+    if(rtn< 0)
+    {
+        printErrorInfo(rtn);
+        return nullptr;
+    }
+    else
+    {
+        width = frame->width;
+        height = frame->height;
+        return m_converBuff;
+    }
+}
+
+unsigned char *VideoInput::readRawData(int &width, int &height, PixelFormatType &pixelFormat)
+{
+    auto frame = readAVFrame();
+    if(frame == nullptr)
+        return nullptr;
+
+    int rtn = av_image_fill_arrays(m_frame->data, m_frame->linesize, m_orgBuff, (AVPixelFormat)frame->format, frame->width , frame->height, 1);
     if(rtn< 0)
         return nullptr;
 
-    //YUV-->RGB;
-    sws_scale(m_swsCtx,
-              (uint8_t const *const*)frame->data,
-              frame->linesize,
-              0,
-              frame->height,
-              m_rgbFrame->data,
-              m_rgbFrame->linesize);
-
+    pixelFormat = (PixelFormatType)frame->format;
     width = frame->width;
     height = frame->height;
-    return m_rgbBuffer;
-}
-
-unsigned char *VideoInput::readYuvData(int &width, int &height, std::string &yuvType)
-{
-    return nullptr;
+    return m_orgBuff;
 }
 
 void VideoInput::printErrorInfo(int errorCode)
@@ -218,8 +274,8 @@ AVFrame *VideoInput::readAVFrame()
         if(m_packet->stream_index != m_videoStreamIdx)
             break;
 
-        m_packet->dts = round(m_packet->dts * (1000 * rationalToFloat(m_avformatCtx->streams[m_videoStreamIdx]->time_base)));
-        m_packet->pts = round(m_packet->pts * (1000 * rationalToFloat(m_avformatCtx->streams[m_videoStreamIdx]->time_base)));
+        m_packet->dts = (int64_t)round(m_packet->dts * (1000 * rationalToFloat(m_avformatCtx->streams[m_videoStreamIdx]->time_base)));
+        m_packet->pts = (int64_t)round(m_packet->pts * (1000 * rationalToFloat(m_avformatCtx->streams[m_videoStreamIdx]->time_base)));
 
         //将packet传给解码器；
         rtn = avcodec_send_packet(m_codecCtx, m_packet);
@@ -253,16 +309,19 @@ void VideoInput::release()
     if(m_frame != nullptr)
         av_frame_free(&m_frame);
 
-    if(m_rgbFrame != nullptr)
-        av_frame_free(&m_rgbFrame);
+    if(m_converFrame != nullptr)
+        av_frame_free(&m_converFrame);
 
     if(m_codecCtx != nullptr)
         avcodec_free_context(&m_codecCtx);
 
-    if(m_rgbBuffer != nullptr)
+    if(m_converBuff != nullptr)
     {
-        delete[] m_rgbBuffer;
-        m_rgbBuffer = nullptr;
+        delete[] m_converBuff;
+        m_converBuff = nullptr;
     }
+
+    if(m_swsCtx != nullptr)
+        sws_freeContext(m_swsCtx);
 }
 

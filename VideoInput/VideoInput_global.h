@@ -16,4 +16,8 @@
 #  define VIDEOINPUT_EXPORT Q_DECL_IMPORT
 #endif
 
+#ifdef _WIN32
+#   pragma warning (disable : 4251)
+#endif
+
 #endif // VIDEOINPUT_GLOBAL_H
