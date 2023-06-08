@@ -24,7 +24,7 @@ VideoInputUI::~VideoInputUI()
 
 void VideoInputUI::on_btnOpen_clicked()
 {
-    if(m_viPtr->open("HP True Vision 5MP Camera", "640*480"))
+    if(m_viPtr->open("HP True Vision 5MP Camera", "1920*1080"))
     {
         m_isOpened = true;
         std::thread renderThread(readFrameThread, this);
@@ -43,7 +43,7 @@ void VideoInputUI::onRender(QImage img)
     if(!m_isOpened)
         return;
 
-    ui->labelImg->setPixmap(QPixmap::fromImage(img));
+    ui->labelImg->setPixmap(QPixmap::fromImage(img.scaled(ui->labelImg->width(), ui->labelImg->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
     update();
     m_renderDone.store(true);
 }

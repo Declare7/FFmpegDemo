@@ -322,6 +322,9 @@ void VideoInput::release()
     }
 
     if(m_swsCtx != nullptr)
+    {
         sws_freeContext(m_swsCtx);
+        m_swsCtx = nullptr;
+    }
 }
 
