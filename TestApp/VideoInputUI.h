@@ -24,12 +24,12 @@ public:
 signals:
     void printMsg(QString msg);
 
-    void render(QImage img);
+    void renderFrame(QImage img);
 
 private slots:
     void on_btnOpen_clicked();
 
-    void onRender(QImage img);
+    void onRenderFrame(QImage img);
 
     void on_btnClose_clicked();
 

@@ -12,7 +12,7 @@ VideoInputUI::VideoInputUI(QWidget *parent) :
     m_onLogCallbackFunc = std::bind(&VideoInputUI::onLogCallback, this, std::placeholders::_1);
     m_viPtr = new VideoInput(m_onLogCallbackFunc);
 
-    connect(this, &VideoInputUI::render, this, &VideoInputUI::onRender, Qt::QueuedConnection);
+    connect(this, &VideoInputUI::renderFrame, this, &VideoInputUI::onRenderFrame, Qt::QueuedConnection);
 }
 
 VideoInputUI::~VideoInputUI()
@@ -37,7 +37,7 @@ void VideoInputUI::on_btnOpen_clicked()
     }
 }
 
-void VideoInputUI::onRender(QImage img)
+void VideoInputUI::onRenderFrame(QImage img)
 {
     //因为QImage采用的是浅拷贝，所以在停止出流时要保证最后一帧渲染完成；
     std::lock_guard<std::mutex> lck(m_waitRenderCompletedMtx);
@@ -84,7 +84,7 @@ void VideoInputUI::readFrameThread(VideoInputUI *viPtr)
 
         QImage img(framePtr, width, height, QImage::Format_RGB32);
         viPtr->m_renderDone.store(false);
-        emit viPtr->render(img);
+        emit viPtr->renderFrame(img);
     }
 }
 
