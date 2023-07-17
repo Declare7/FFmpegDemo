@@ -9,12 +9,14 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    OpenGLRenderWidget.cpp \
     VideoInputUI.cpp \
     main.cpp \
     MainWindow.cpp
 
 HEADERS += \
     MainWindow.h \
+    OpenGLRenderWidget.h \
     VideoInputUI.h
 
 FORMS += \
@@ -48,3 +50,7 @@ win32{
     DEPENDPATH += $$DESTDIR
 }
 #--------------------------------------------------------------------------------------------------
+
+DISTFILES += \
+    VideoRender.frag \
+    VideoRender.vert

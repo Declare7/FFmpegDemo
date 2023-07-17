@@ -5,6 +5,7 @@
 #include <string>
 #include <mutex>
 #include <atomic>
+#include <functional>
 
 class VideoInput;
 
