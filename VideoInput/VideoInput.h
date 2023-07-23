@@ -35,7 +35,7 @@ public:
     explicit VideoInput(std::function<void (const std::string&)> logCallback=nullptr);
     ~VideoInput();
 
-    bool open(const std::string url, std::string videoSize="", std::string inputFmt="");
+    bool open(const std::string url, std::string inputFmt="", std::string videoSize="");
 
     void close();
 

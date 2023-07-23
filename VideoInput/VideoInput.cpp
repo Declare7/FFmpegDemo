@@ -16,10 +16,6 @@ VideoInput::VideoInput(std::function<void (const std::string &)> logCallback)
 {
     m_logCallBack = logCallback;
     avdevice_register_all();
-
-#ifdef _WIN32
-    m_inputFormat = av_find_input_format("dshow");
-#endif
 }
 
 VideoInput::~VideoInput()
@@ -27,7 +23,7 @@ VideoInput::~VideoInput()
 
 }
 
-bool VideoInput::open(const std::string url, std::string videoSize, std::string inputFmt)
+bool VideoInput::open(const std::string url, std::string inputFmt, std::string videoSize)
 {
     std::string totalUrl = "video="+ url;
 
@@ -35,7 +31,7 @@ bool VideoInput::open(const std::string url, std::string videoSize, std::string 
     if(!videoSize.empty())
         av_dict_set(&dict, "video_size", videoSize.c_str(), 0);
     if(!inputFmt.empty())
-        av_dict_set(&dict, "input_format", inputFmt.c_str(), 0);
+        m_inputFormat = av_find_input_format(inputFmt.c_str());
 
     //ffmpeg的接口返回0是成功，负数是失败；
     int rtn = 1;

@@ -24,8 +24,8 @@ VideoInputUI::~VideoInputUI()
 
 void VideoInputUI::on_btnOpen_clicked()
 {
-//    if(m_viPtr->open("HP True Vision 5MP Camera", "1920*1080"))
-    if(m_viPtr->open("HP HD Camera", "1280*720"))
+//    if(m_viPtr->open("HP HD Camera", "1280*720"))
+    if(m_viPtr->open("HP True Vision 5MP Camera", "dshow", "1920*1080"))
     {
         m_isOpened = true;
         std::thread renderThread(readFrameThread, this);
