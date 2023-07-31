@@ -6,6 +6,7 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
+#include "OpenGLRenderWidget.h"
 
 class VideoInput;
 
@@ -26,6 +27,8 @@ signals:
 
     void renderFrame(QImage img);
 
+    void resizeOpenGLWid(int w, int h);
+
 private slots:
     void on_btnOpen_clicked();
 
@@ -33,11 +36,16 @@ private slots:
 
     void on_btnClose_clicked();
 
+    void on_checkBoxGPU_clicked();
+
+    void onResizeOpenGLWid(int w, int h);
+
 private:
     void printLog(QString log);
     void onLogCallback(const std::string &log);
 
     static void readFrameThread(VideoInputUI *viPtr);
+    void renderFrameGPU(unsigned char* data, int w, int h, int size);
 
 private:
     Ui::VideoInputUI *ui;
@@ -49,6 +57,8 @@ private:
     std::mutex      m_waitReadCompletedMtx;
     std::mutex      m_waitRenderCompletedMtx;
     std::atomic_bool m_renderDone{false};
+
+    OpenGLRenderWidget* m_openglWid{nullptr};
 };
 
 #endif // VIDEOINPUTUI_H

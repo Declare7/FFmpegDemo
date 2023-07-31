@@ -32,6 +32,9 @@
     </property>
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
       <widget class="VideoInputUI" name="tabVideoInput">
        <attribute name="title">
         <string>VideoInput</string>
@@ -39,7 +42,7 @@
       </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Tab 2</string>
+        <string>tab2</string>
        </attribute>
       </widget>
      </widget>

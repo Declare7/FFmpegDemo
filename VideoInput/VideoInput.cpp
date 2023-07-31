@@ -213,14 +213,45 @@ unsigned char *VideoInput::readRawData(int &width, int &height, PixelFormatType 
     if(frame == nullptr)
         return nullptr;
 
-    int rtn = av_image_fill_arrays(m_frame->data, m_frame->linesize, m_orgBuff, (AVPixelFormat)frame->format, frame->width , frame->height, 1);
+    AVPixelFormat pixFmt = (AVPixelFormat)frame->format;
+    int rtn = -1;
+    do
+    {
+        if(m_converFrame == nullptr)
+        {
+            m_converFrame = av_frame_alloc();
+            if(m_converFrame == nullptr)
+            {
+                printLog("alloc frame fail!");
+                break;
+            }
+        }
+
+        if(m_converBuff == nullptr)
+        {
+            rtn = av_image_get_buffer_size(pixFmt, m_width, m_height, 1);
+            if(rtn< 0)
+                break;
+            m_converBuff = new unsigned char[rtn];
+        }
+
+        //把AVFrame的图像数据绑定到指定的buffer；
+        rtn = av_image_fill_arrays(m_converFrame->data, m_converFrame->linesize, m_converBuff, pixFmt, frame->width, frame->height, 1);
+        if(rtn< 0)
+            break;
+
+    }while(0);
+
     if(rtn< 0)
+    {
+        printErrorInfo(rtn);
         return nullptr;
+    }
 
     pixelFormat = (PixelFormatType)frame->format;
     width = frame->width;
     height = frame->height;
-    return m_orgBuff;
+    return m_converBuff;
 }
 
 void VideoInput::printErrorInfo(int errorCode)

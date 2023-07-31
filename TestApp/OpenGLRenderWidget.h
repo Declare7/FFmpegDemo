@@ -6,8 +6,6 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
 #include <atomic>
-#include <condition_variable>
-#include <mutex>
 
 class OpenGLRenderWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
@@ -31,10 +29,11 @@ private:
     GLuint                  m_txtV;
 
     unsigned char*          m_frameData{nullptr};
+    int                     m_frameDataSize{0};
     int                     m_frameWidth{0};
     int                     m_frameHeight{0};
-    std::condition_variable m_renderCv;
-    std::mutex              m_renderMtx;
+
+    std::atomic_bool        m_renderDone{true};
 };
 
 #endif // OPENGLRENDERWIDGET_H

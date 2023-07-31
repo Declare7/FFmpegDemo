@@ -51,6 +51,7 @@ win32{
 }
 #--------------------------------------------------------------------------------------------------
 
-DISTFILES += \
-    VideoRender.frag \
-    VideoRender.vert
+DISTFILES +=
+
+RESOURCES += \
+    shader.qrc

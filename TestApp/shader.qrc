@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>VideoRender.frag</file>
+        <file>VideoRender.vert</file>
+    </qresource>
+</RCC>

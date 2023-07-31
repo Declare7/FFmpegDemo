@@ -8,11 +8,20 @@ VideoInputUI::VideoInputUI(QWidget *parent) :
     ui(new Ui::VideoInputUI)
 {
     ui->setupUi(this);
+    auto openglWidLayout = new QHBoxLayout();
+    openglWidLayout->setContentsMargins(0, 0, 0, 0);
+    openglWidLayout->setSpacing(0);
+    ui->labelImg->setLayout(openglWidLayout);
+
+    m_openglWid = new OpenGLRenderWidget(ui->labelImg);
+    openglWidLayout->addWidget(m_openglWid);
+    on_checkBoxGPU_clicked();
 
     m_onLogCallbackFunc = std::bind(&VideoInputUI::onLogCallback, this, std::placeholders::_1);
     m_viPtr = new VideoInput(m_onLogCallbackFunc);
 
     connect(this, &VideoInputUI::renderFrame, this, &VideoInputUI::onRenderFrame, Qt::QueuedConnection);
+    connect(this, &VideoInputUI::resizeOpenGLWid, this, &VideoInputUI::onResizeOpenGLWid, Qt::QueuedConnection);
 }
 
 VideoInputUI::~VideoInputUI()
@@ -24,8 +33,8 @@ VideoInputUI::~VideoInputUI()
 
 void VideoInputUI::on_btnOpen_clicked()
 {
-//    if(m_viPtr->open("HP HD Camera", "1280*720"))
-    if(m_viPtr->open("HP True Vision 5MP Camera", "dshow", "1920*1080"))
+    if(m_viPtr->open("HP HD Camera", "dshow", "1280*720"))
+//    if(m_viPtr->open("HP True Vision 5MP Camera", "dshow", "1920*1080"))
     {
         m_isOpened = true;
         std::thread renderThread(readFrameThread, this);
@@ -75,17 +84,39 @@ void VideoInputUI::readFrameThread(VideoInputUI *viPtr)
 
         int width = 0;
         int height = 0;
-        auto framePtr = viPtr->m_viPtr->readSpecFormatData(width, height, VideoInput::PixelFormatBGRA);
+        unsigned char* framePtr = nullptr;
+        VideoInput::PixelFormatType format = VideoInput::PixelFormatYUVJ422P;
+        if(viPtr->ui->checkBoxGPU->isChecked())
+            framePtr = viPtr->m_viPtr->readSpecFormatData(width, height, format);
+        else
+            framePtr = viPtr->m_viPtr->readSpecFormatData(width, height, VideoInput::PixelFormatBGRA);
+
         if(framePtr == nullptr)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
             continue;
         }
 
-        QImage img(framePtr, width, height, QImage::Format_RGB32);
-        viPtr->m_renderDone.store(false);
-        emit viPtr->renderFrame(img);
+        if(viPtr->ui->checkBoxGPU->isChecked())
+        {
+            int size = 0;
+            if(format == VideoInput::PixelFormatYUVJ422P)
+                size = width * height + (width/2) * (height/2) * 2;
+            viPtr->renderFrameGPU(framePtr, width, height, size);
+        }
+        else
+        {
+            QImage img(framePtr, width, height, QImage::Format_RGB32);
+            viPtr->m_renderDone.store(false);
+            emit viPtr->renderFrame(img);
+        }
     }
+}
+
+void VideoInputUI::renderFrameGPU(unsigned char *data, int w, int h, int size)
+{
+    emit resizeOpenGLWid(ui->labelImg->width(), ui->labelImg->width()* ((float)h/w));
+    m_openglWid->frameRender(data, w, h, size);
 }
 
 void VideoInputUI::on_btnClose_clicked()
@@ -97,5 +128,15 @@ void VideoInputUI::on_btnClose_clicked()
 
     ui->labelImg->setPixmap(QPixmap());
     update();
+}
+
+void VideoInputUI::on_checkBoxGPU_clicked()
+{
+    m_openglWid->setHidden(!ui->checkBoxGPU->isChecked());
+}
+
+void VideoInputUI::onResizeOpenGLWid(int w, int h)
+{
+    m_openglWid->setFixedHeight(h);
 }
 
