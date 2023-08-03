@@ -87,9 +87,9 @@ void OpenGLRenderWidget::paintGL()
     unsigned char* dataU = dataY + m_frameWidth* m_frameHeight;
     unsigned char* dataV = dataU + (m_frameWidth/2)* (m_frameHeight/2);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
+//    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//    glDisable(GL_DEPTH_TEST);
 
     m_glProgram.bind();
     m_glBuff.bind();
