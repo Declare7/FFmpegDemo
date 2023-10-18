@@ -8,13 +8,13 @@ void main(void)
     vec3 yuv;
     vec3 rgb;
 
-    yuv.x = texture2D(textureY, textureOut).r;
-    yuv.y = texture2D(textureU, textureOut).r - 0.5;
-    yuv.z = texture2D(textureV, textureOut).r - 0.5;
+    highp float y = texture2D(textureY, textureOut).r;
+    highp float u = texture2D(textureU, textureOut).r - 0.5;
+    highp float v = texture2D(textureV, textureOut).r - 0.5;
 
-    rgb = mat3(1.0, 1.0, 1.0,
-               0.0, -0.39465, 2.03211,
-               1.13983, -0.58060, 0.0) * yuv;
+    highp float r = y + 1.13983 * v;
+    highp float g = y - 0.39465 * u - 0.58060 * v;
+    highp float b = y + 2.03211 * u;
 
-    gl_FragColor = vec4(rgb, 1.0);
+    gl_FragColor = vec4(r, g, b, 1.0);
 }

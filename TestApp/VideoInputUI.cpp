@@ -101,7 +101,7 @@ void VideoInputUI::readFrameThread(VideoInputUI *viPtr)
         {
             int size = 0;
             if(format == VideoInput::PixelFormatYUVJ422P)
-                size = width * height + (width/2) * (height/2) * 2;
+                size = width * height * 2;
             viPtr->renderFrameGPU(framePtr, width, height, size);
         }
         else
