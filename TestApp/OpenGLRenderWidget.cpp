@@ -83,23 +83,11 @@ void OpenGLRenderWidget::paintGL()
     if(m_frameData == nullptr)
         return;
 
-    //由YUV420p的数据结构决定；
-    //YUV420p byte stream: /Y--------width*height----------/U---(width/2)*(heigh/2)---/V---(width/2)*(heigh/2)---/
+    //由YUVJ422p的数据结构决定；
+    //YUV420p byte stream: /Y--------width*height----------/U---width*heigh/2---/V---width*heigh/2---/
     unsigned char* dataY = m_frameData;
     unsigned char* dataU = m_frameData + m_frameWidth* m_frameHeight;
     unsigned char* dataV = dataU + m_frameWidth* m_frameHeight/2;
-
-//    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//    glDisable(GL_DEPTH_TEST);
-
-    m_glProgram.bind();
-    m_glBuff.bind();
-    m_glProgram.enableAttributeArray("vertexIn");
-    m_glProgram.enableAttributeArray("textureIn");
-    //把顶点数据注入到gl程序的变量中；
-    m_glProgram.setAttributeBuffer("vertexIn", GL_FLOAT, 0, 2, sizeof(GLfloat) * 2);
-    m_glProgram.setAttributeBuffer("textureIn", GL_FLOAT, sizeof(GLfloat) * 2 * 4, 2, sizeof(GLfloat) * 2);
 
     //绑定纹理Y的数据；
     glActiveTexture(GL_TEXTURE0);
@@ -109,6 +97,7 @@ void OpenGLRenderWidget::paintGL()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    m_glProgram.setUniformValue("textureY", 0); //GL_TEXTURE0
 
     //绑定纹理U的数据；
     glActiveTexture(GL_TEXTURE1);
@@ -118,6 +107,7 @@ void OpenGLRenderWidget::paintGL()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    m_glProgram.setUniformValue("textureU", 1); //GL_TEXTURE1
 
     //绑定纹理V的数据；
     glActiveTexture(GL_TEXTURE2);
@@ -127,15 +117,20 @@ void OpenGLRenderWidget::paintGL()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    //设置gl程序中纹理的变量名；
-    m_glProgram.setUniformValue("textureY", 0); //GL_TEXTURE0
-    m_glProgram.setUniformValue("textureU", 1); //GL_TEXTURE1
     m_glProgram.setUniformValue("textureV", 2); //GL_TEXTURE2
+
+    m_glProgram.bind();
+    m_glBuff.bind();
+    m_glProgram.enableAttributeArray("vertexIn");
+    m_glProgram.enableAttributeArray("textureIn");
+    //把顶点数据注入到gl程序的变量中；
+    m_glProgram.setAttributeBuffer("vertexIn", GL_FLOAT, 0, 2, sizeof(GLfloat) * 2);
+    m_glProgram.setAttributeBuffer("textureIn", GL_FLOAT, sizeof(GLfloat) * 2 * 4, 2, sizeof(GLfloat) * 2);
 
     //绘制，从顶点0开始，绘制四个顶点；
     glDrawArrays(GL_QUADS, 0, 4);
 
+    //完成绘制后释放；
     m_glProgram.disableAttributeArray("vertexIn");
     m_glProgram.disableAttributeArray("textureIn");
     m_glProgram.release();
