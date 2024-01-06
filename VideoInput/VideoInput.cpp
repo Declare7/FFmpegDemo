@@ -1,4 +1,3 @@
-
 #include "VideoInput.h"
 
 extern "C"
@@ -9,6 +8,19 @@ extern "C"
 #include "libavutil/imgutils.h"
 #include "libswscale/swscale.h"
 #include "libavutil/avutil.h"
+}
+
+AVPixelFormat   gHwPixelFormat = AV_PIX_FMT_NONE;       //使用的硬解码器格式；
+AVHWDeviceType  gHwDeviceType = AV_HWDEVICE_TYPE_NONE;  //硬解码设备类型；
+enum AVPixelFormat get_hw_format(struct AVCodecContext *s, const enum AVPixelFormat * fmt)
+{
+    (void)s;
+    for (const enum AVPixelFormat *p = fmt; *p != -1; p++)
+    {
+        if (*p == gHwPixelFormat)
+            return *p;
+    }
+    return AV_PIX_FMT_NONE;
 }
 
 
@@ -62,6 +74,8 @@ bool VideoInput::open(const std::string url, std::string inputFormat, std::strin
         std::string codecName = avcodec->name;
         printLog("codec: "+ codecName);
 
+        //获取硬解码格式；
+        gHwPixelFormat = (AVPixelFormat)getHWDecoderPixelFmt((void*)avcodec);
 
         //创建解码器上下文；
         m_codecCtx =  avcodec_alloc_context3(avcodec);
@@ -79,6 +93,24 @@ bool VideoInput::open(const std::string url, std::string inputFormat, std::strin
 
         m_codecCtx->flags2 |= AV_CODEC_FLAG2_FAST;  //允许不合规范的加速技巧；
         m_codecCtx->thread_count = 2;               //使用多个线程加速解码；
+
+        //支持硬解码；
+        if(gHwPixelFormat != AV_PIX_FMT_NONE)
+        {
+            printLog("Hw device type: " + std::to_string(gHwDeviceType));
+            rtn = av_hwdevice_ctx_create(&m_hwDevContext, gHwDeviceType, "", nullptr, 0);
+            if(rtn == 0)
+            {
+                //设置硬解码格式；
+                m_codecCtx->get_format = get_hw_format;
+                m_codecCtx->hw_device_ctx = av_buffer_ref(m_hwDevContext);
+            }
+            else
+            {
+                printErrorInfo(rtn);
+                gHwPixelFormat = AV_PIX_FMT_NONE;
+            }
+        }
 
         //初始化解码器上下文，如果在调用avcodec_alloc_context3时已传入解码器，则参数2可以设置为nullptr；
         rtn = avcodec_open2(m_codecCtx, nullptr, nullptr);
@@ -273,6 +305,39 @@ void VideoInput::printLog(const std::string &log)
     m_logCallBack(log);
 }
 
+int VideoInput::getHWDecoderPixelFmt(void *avcodec)
+{
+    int i = 0;
+    while(1)
+    {
+        auto hwConfig = avcodec_get_hw_config(static_cast<const AVCodec *>(avcodec), i);
+        if(hwConfig == nullptr)
+        {
+            if(m_specHwPixelFormat != AV_PIX_FMT_NONE)
+            {
+                printLog("can not found spec decoder pixel format :"+ std::to_string(m_specHwPixelFormat));
+            }
+            return AV_PIX_FMT_NONE;
+        }
+        printLog("Hardware decoder pixel format" + std::to_string(i) + " :" + std::to_string(hwConfig->pix_fmt));
+
+        //用户未指定硬解码器则返回第一个；
+        if(m_specHwPixelFormat == AV_PIX_FMT_NONE)
+        {
+            gHwDeviceType = hwConfig->device_type;
+            return hwConfig->pix_fmt;
+        }
+        //用户已指定硬解码器时，找到相应的硬解码器则返回；
+        else if(m_specHwPixelFormat == hwConfig->pix_fmt)
+        {
+            gHwDeviceType = hwConfig->device_type;
+            return hwConfig->pix_fmt;
+        }
+
+        i++;
+    }
+}
+
 float VideoInput::rationalToFloat(const AVRational &rational)
 {
     return rational.den == 0? 0 : (float)(rational.num)/rational.den;
@@ -322,11 +387,18 @@ AVFrame *VideoInput::readAVFrame()
         return nullptr;
     }
 
+    //硬解码，帧数据存放在硬件存储上（比如GPU的显存）；
+    if(gHwPixelFormat != AV_PIX_FMT_NONE)
+    {
+
+    }
+
     return m_frame;
 }
 
 void VideoInput::release()
 {
+    gHwPixelFormat = AV_PIX_FMT_NONE;
     if(m_avformatCtx != nullptr)
         avformat_close_input(&m_avformatCtx);
 
@@ -352,6 +424,12 @@ void VideoInput::release()
     {
         sws_freeContext(m_swsCtx);
         m_swsCtx = nullptr;
+    }
+
+    if(m_hwDevContext != nullptr)
+    {
+        av_buffer_unref(&m_hwDevContext);
+        m_hwDevContext = nullptr;
     }
 }
 

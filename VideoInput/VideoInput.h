@@ -20,6 +20,7 @@ struct AVCodecContext;
 struct AVPacket;
 struct AVFrame;
 struct SwsContext;
+struct AVBufferRef;
 
 class VIDEOINPUT_EXPORT VideoInput
 {
@@ -35,8 +36,20 @@ public:
     explicit VideoInput(std::function<void (const std::string&)> logCallback=nullptr);
     ~VideoInput();
 
+    /**
+    * @brief 打开视频流；
+    * @param [in] url: 视频流地址；inputFormat: 输入格式；videoSize: 视频流分辨率；
+    * @param
+    * @return 成功返回true；失败返回false；
+    */
     bool open(const std::string url, std::string inputFormat="", std::string videoSize="");
 
+    /**
+    * @brief 关闭视频流，并释放相关资源；
+    * @param
+    * @param
+    * @return
+    */
     void close();
 
     /**  读取指定像素格式的帧数据；
@@ -59,10 +72,9 @@ private:
     void printErrorInfo(int errorCode);
     void printLog(const std::string &log);
 
+    int getHWDecoderPixelFmt(void *avcodec);
     float rationalToFloat(const AVRational &rational);
-
     AVFrame *readAVFrame();
-
     void release();
 
 private:
@@ -84,6 +96,9 @@ private:
     unsigned char           *m_converBuff{nullptr};
     int                     m_orgPixelFormat{-1};  //参考pixfmt.h的AVPixelFormat;
     unsigned char           *m_orgBuff{nullptr};
+
+    int         m_specHwPixelFormat{-1};//用户指定硬解码器格式；
+    AVBufferRef *m_hwDevContext{nullptr};
 
     std::mutex              m_closeMtx;
 };
