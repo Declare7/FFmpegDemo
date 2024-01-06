@@ -27,7 +27,7 @@
     <number>0</number>
    </property>
    <property name="bottomMargin">
-    <number>0</number>
+    <number>20</number>
    </property>
    <item>
     <widget class="QLabel" name="labelImg">
@@ -64,13 +64,92 @@
        <number>20</number>
       </property>
       <item>
+       <widget class="QComboBox" name="comboBoxInput">
+        <property name="minimumSize">
+         <size>
+          <width>530</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="editable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="comboBoxFormat">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="editable">
+         <bool>true</bool>
+        </property>
+        <item>
+         <property name="text">
+          <string>dshow</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string/>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="comboBoxResolution">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="editable">
+         <bool>true</bool>
+        </property>
+        <item>
+         <property name="text">
+          <string>1280x720</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1920x1080</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>640x480</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="widget_2" native="true">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>100</height>
+      </size>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="spacing">
+       <number>20</number>
+      </property>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>40</width>
+          <width>529</width>
           <height>20</height>
          </size>
         </property>
@@ -80,7 +159,7 @@
        <widget class="QPushButton" name="btnOpen">
         <property name="minimumSize">
          <size>
-          <width>150</width>
+          <width>120</width>
           <height>40</height>
          </size>
         </property>
@@ -93,7 +172,7 @@
        <widget class="QPushButton" name="btnClose">
         <property name="minimumSize">
          <size>
-          <width>150</width>
+          <width>120</width>
           <height>40</height>
          </size>
         </property>

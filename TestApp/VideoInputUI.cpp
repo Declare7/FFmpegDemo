@@ -2,6 +2,7 @@
 #include "ui_VideoInputUI.h"
 #include "VideoInput.h"
 #include <thread>
+#include <QCameraInfo>
 
 VideoInputUI::VideoInputUI(QWidget *parent) :
     QWidget(parent),
@@ -22,6 +23,13 @@ VideoInputUI::VideoInputUI(QWidget *parent) :
 
     connect(this, &VideoInputUI::renderFrame, this, &VideoInputUI::onRenderFrame, Qt::QueuedConnection);
     connect(this, &VideoInputUI::resizeOpenGLWid, this, &VideoInputUI::onResizeOpenGLWid, Qt::QueuedConnection);
+
+    auto cameras = QCameraInfo::availableCameras();
+    for(int i = 0; i< cameras.size(); ++i)
+    {
+        ui->comboBoxInput->addItem(cameras.at(i).description());
+    }
+    ui->comboBoxInput->addItem("C:/Users/15306/Desktop/ffmpeg/2023-07-21_18-14-54.mp4");
 }
 
 VideoInputUI::~VideoInputUI()
@@ -33,8 +41,9 @@ VideoInputUI::~VideoInputUI()
 
 void VideoInputUI::on_btnOpen_clicked()
 {
-    if(m_viPtr->open("HP HD Camera", "dshow", "1280*720"))
-//    if(m_viPtr->open("HP True Vision 5MP Camera", "dshow", "1920*1080"))
+    if(m_viPtr->open(ui->comboBoxInput->currentText().toStdString(),
+                     ui->comboBoxFormat->currentText().toStdString(),
+                     ui->comboBoxResolution->currentText().toStdString()))
     {
         m_isOpened = true;
         std::thread renderThread(readFrameThread, this);

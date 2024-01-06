@@ -37,7 +37,11 @@ VideoInput::~VideoInput()
 
 bool VideoInput::open(const std::string url, std::string inputFormat, std::string videoSize)
 {
-    std::string totalUrl = "video="+ url;
+    std::string totalUrl = url;
+    if(inputFormat == "dshow")
+    {
+        totalUrl = "video=" + totalUrl;
+    }
 
     AVDictionary *dict = nullptr;
     if(!videoSize.empty())
@@ -95,22 +99,22 @@ bool VideoInput::open(const std::string url, std::string inputFormat, std::strin
         m_codecCtx->thread_count = 2;               //使用多个线程加速解码；
 
         //支持硬解码；
-        if(gHwPixelFormat != AV_PIX_FMT_NONE)
-        {
-            printLog("Hw device type: " + std::to_string(gHwDeviceType));
-            rtn = av_hwdevice_ctx_create(&m_hwDevContext, gHwDeviceType, "", nullptr, 0);
-            if(rtn == 0)
-            {
-                //设置硬解码格式；
-                m_codecCtx->get_format = get_hw_format;
-                m_codecCtx->hw_device_ctx = av_buffer_ref(m_hwDevContext);
-            }
-            else
-            {
-                printErrorInfo(rtn);
-                gHwPixelFormat = AV_PIX_FMT_NONE;
-            }
-        }
+//        if(gHwPixelFormat != AV_PIX_FMT_NONE)
+//        {
+//            printLog("Hw device type: " + std::to_string(gHwDeviceType));
+//            rtn = av_hwdevice_ctx_create(&m_hwDevContext, gHwDeviceType, "", nullptr, 0);
+//            if(rtn == 0)
+//            {
+//                //设置硬解码格式；
+//                m_codecCtx->get_format = get_hw_format;
+//                m_codecCtx->hw_device_ctx = av_buffer_ref(m_hwDevContext);
+//            }
+//            else
+//            {
+//                printErrorInfo(rtn);
+//                gHwPixelFormat = AV_PIX_FMT_NONE;
+//            }
+//        }
 
         //初始化解码器上下文，如果在调用avcodec_alloc_context3时已传入解码器，则参数2可以设置为nullptr；
         rtn = avcodec_open2(m_codecCtx, nullptr, nullptr);
@@ -399,6 +403,7 @@ AVFrame *VideoInput::readAVFrame()
 void VideoInput::release()
 {
     gHwPixelFormat = AV_PIX_FMT_NONE;
+
     if(m_avformatCtx != nullptr)
         avformat_close_input(&m_avformatCtx);
 
@@ -430,6 +435,11 @@ void VideoInput::release()
     {
         av_buffer_unref(&m_hwDevContext);
         m_hwDevContext = nullptr;
+    }
+
+    if(m_inputFormat != nullptr)
+    {
+        m_inputFormat = nullptr;
     }
 }
 
