@@ -13,7 +13,9 @@ public:
     explicit OpenGLRenderWidget(QWidget *parent=nullptr);
     virtual ~OpenGLRenderWidget();
 
-    void frameRender(unsigned char *data, int w, int h, int len);
+    void renderFrame(unsigned char *data, int w, int h, int len);
+
+    void reset();
 
     // QOpenGLWidget interface
 protected:

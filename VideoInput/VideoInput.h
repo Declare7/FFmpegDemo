@@ -35,7 +35,7 @@ public:
     explicit VideoInput(std::function<void (const std::string&)> logCallback=nullptr);
     ~VideoInput();
 
-    bool open(const std::string url, std::string inputFmt="", std::string videoSize="");
+    bool open(const std::string url, std::string inputFormat="", std::string videoSize="");
 
     void close();
 
@@ -45,7 +45,7 @@ public:
     *  @return  帧数据的指针，如果失败则返回nullptr；
     *  @note    调用方不能对return 的指针进行释放；
     */
-    unsigned char *readSpecFormatData(int &width, int &height, const PixelFormatType &pixelFormat);
+    unsigned char *readSpecFormatData(const PixelFormatType &pixelFormat, int &width, int &height);
 
     /**  读取原始像素格式的帧数据；
     *  @param[in]
@@ -53,7 +53,7 @@ public:
     *  @return  帧数据的指针，如果失败则返回nullptr；
     *  @note    调用方不能对return 的指针进行释放；
     */
-    unsigned char *readRawData(int &width, int &height, PixelFormatType &pixelFormat);
+    unsigned char *readRawData(PixelFormatType &pixelFormat, int &width, int &height);
 
 private:
     void printErrorInfo(int errorCode);

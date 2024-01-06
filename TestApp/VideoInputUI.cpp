@@ -87,9 +87,9 @@ void VideoInputUI::readFrameThread(VideoInputUI *viPtr)
         unsigned char* framePtr = nullptr;
         VideoInput::PixelFormatType format = VideoInput::PixelFormatYUVJ422P;
         if(viPtr->ui->checkBoxGPU->isChecked())
-            framePtr = viPtr->m_viPtr->readSpecFormatData(width, height, format);
+            framePtr = viPtr->m_viPtr->readSpecFormatData(format, width, height);
         else
-            framePtr = viPtr->m_viPtr->readSpecFormatData(width, height, VideoInput::PixelFormatBGRA);
+            framePtr = viPtr->m_viPtr->readSpecFormatData(VideoInput::PixelFormatBGRA, width, height);
 
         if(framePtr == nullptr)
         {
@@ -116,7 +116,7 @@ void VideoInputUI::readFrameThread(VideoInputUI *viPtr)
 void VideoInputUI::renderFrameGPU(unsigned char *data, int w, int h, int size)
 {
     emit resizeOpenGLWid(ui->labelImg->width(), ui->labelImg->width()* ((float)h/w));
-    m_openglWid->frameRender(data, w, h, size);
+    m_openglWid->renderFrame(data, w, h, size);
 }
 
 void VideoInputUI::on_btnClose_clicked()
@@ -126,8 +126,15 @@ void VideoInputUI::on_btnClose_clicked()
     std::lock_guard<std::mutex> lck2(m_waitRenderCompletedMtx);     //保证最后一帧已经渲染完成；
     m_viPtr->close();   //close会释放所有的资源，因此前面需要保证所有使用到资源的地方已经结束；
 
-    ui->labelImg->setPixmap(QPixmap());
-    update();
+    if(ui->checkBoxGPU->isChecked())
+    {
+        m_openglWid->reset();
+    }
+    else
+    {
+        ui->labelImg->setPixmap(QPixmap());
+        update();
+    }
 }
 
 void VideoInputUI::on_checkBoxGPU_clicked()

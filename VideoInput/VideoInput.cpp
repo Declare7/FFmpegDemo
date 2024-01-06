@@ -23,15 +23,15 @@ VideoInput::~VideoInput()
 
 }
 
-bool VideoInput::open(const std::string url, std::string inputFmt, std::string videoSize)
+bool VideoInput::open(const std::string url, std::string inputFormat, std::string videoSize)
 {
     std::string totalUrl = "video="+ url;
 
     AVDictionary *dict = nullptr;
     if(!videoSize.empty())
         av_dict_set(&dict, "video_size", videoSize.c_str(), 0);
-    if(!inputFmt.empty())
-        m_inputFormat = av_find_input_format(inputFmt.c_str());
+    if(!inputFormat.empty())
+        m_inputFormat = av_find_input_format(inputFormat.c_str());
 
     //ffmpeg的接口返回0是成功，负数是失败；
     int rtn = 1;
@@ -63,7 +63,7 @@ bool VideoInput::open(const std::string url, std::string inputFmt, std::string v
         printLog("codec: "+ codecName);
 
 
-        //创建编码器上下文；
+        //创建解码器上下文；
         m_codecCtx =  avcodec_alloc_context3(avcodec);
         if(m_codecCtx == nullptr)
         {
@@ -72,7 +72,7 @@ bool VideoInput::open(const std::string url, std::string inputFmt, std::string v
             break;
         }
 
-        //将视频流的编码器信息赋值给编码器上下文；
+        //将视频流的编码器信息赋值给解码器上下文；
         rtn = avcodec_parameters_to_context(m_codecCtx, videoStream->codecpar);
         if(rtn< 0)
             break;
@@ -80,7 +80,7 @@ bool VideoInput::open(const std::string url, std::string inputFmt, std::string v
         m_codecCtx->flags2 |= AV_CODEC_FLAG2_FAST;  //允许不合规范的加速技巧；
         m_codecCtx->thread_count = 2;               //使用多个线程加速解码；
 
-        //初始化编码器上下文，如果在调用av_alloc_context3时已传入编码器，则参数2可以设置为nullptr；
+        //初始化解码器上下文，如果在调用avcodec_alloc_context3时已传入解码器，则参数2可以设置为nullptr；
         rtn = avcodec_open2(m_codecCtx, nullptr, nullptr);
         if(rtn< 0)
             break;
@@ -118,7 +118,7 @@ void VideoInput::close()
     release();
 }
 
-unsigned char *VideoInput::readSpecFormatData(int &width, int &height, const PixelFormatType &pixelFormat)
+unsigned char *VideoInput::readSpecFormatData(const PixelFormatType &pixelFormat, int &width, int &height)
 {
     auto frame = readAVFrame();
     if(frame == nullptr)
@@ -207,7 +207,7 @@ unsigned char *VideoInput::readSpecFormatData(int &width, int &height, const Pix
     }
 }
 
-unsigned char *VideoInput::readRawData(int &width, int &height, PixelFormatType &pixelFormat)
+unsigned char *VideoInput::readRawData(PixelFormatType &pixelFormat, int &width, int &height)
 {
     auto frame = readAVFrame();
     if(frame == nullptr)

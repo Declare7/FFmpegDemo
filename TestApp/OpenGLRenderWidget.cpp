@@ -10,15 +10,17 @@ OpenGLRenderWidget::~OpenGLRenderWidget()
 
 }
 
-void OpenGLRenderWidget::frameRender(unsigned char *data, int w, int h, int len)
+void OpenGLRenderWidget::renderFrame(unsigned char *data, int w, int h, int len)
 {
     if(data == nullptr)
         return;
 
+    //上一帧渲染仍未完成，这里return意味着抛掉了这一帧；
     if(!m_renderDone.load())
         return;
 
-    if(w != m_frameWidth || h != m_frameHeight || len != m_frameDataSize)
+    //在分辨率发生变化时重新初始化内容空间；
+    if(w != m_frameWidth || h != m_frameHeight || len != m_frameDataSize || m_frameData == nullptr)
     {
         if(m_frameData != nullptr)
             delete[] m_frameData;
@@ -31,6 +33,12 @@ void OpenGLRenderWidget::frameRender(unsigned char *data, int w, int h, int len)
 
     memcpy(m_frameData, data, len);
     m_renderDone.store(false);
+    update();
+}
+
+void OpenGLRenderWidget::reset()
+{
+    memset(m_frameData, 100, m_frameDataSize);
     update();
 }
 
