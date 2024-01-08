@@ -28,6 +28,7 @@ public:
     //参考FFmpeg的pixfmt.h下的AVPixelFormat；
     enum PixelFormatType
     {
+        PixelFormatNone = -1,
         PixelFormatYUVJ422P = 13,
         PixelFormatBGRA = 28,
     };
@@ -58,7 +59,7 @@ public:
     *  @return  帧数据的指针，如果失败则返回nullptr；
     *  @note    调用方不能对return 的指针进行释放；
     */
-    unsigned char *readSpecFormatData(const PixelFormatType &pixelFormat, int &width, int &height);
+    unsigned char *readSpecFormatData(PixelFormatType &pixelFormat, int &width, int &height);
 
     /**  读取原始像素格式的帧数据；
     *  @param[in]
@@ -68,11 +69,14 @@ public:
     */
     unsigned char *readRawData(PixelFormatType &pixelFormat, int &width, int &height);
 
+    void setHardwareDecodecEnable(bool enable);
+
 private:
     void printErrorInfo(int errorCode);
     void printLog(const std::string &log);
 
     int getHWDecoderPixelFmt(void *avcodec);
+    void setupHardwareDecodec();
     float rationalToFloat(const AVRational &rational);
     AVFrame *readAVFrame();
     void release();
@@ -86,6 +90,7 @@ private:
     AVCodecContext          *m_codecCtx{nullptr};
     AVPacket                *m_packet{nullptr};
     AVFrame                 *m_frame{nullptr};
+    AVFrame                 *m_hwFrame{nullptr};
     AVFrame                 *m_converFrame{nullptr};
     SwsContext              *m_swsCtx{nullptr};
 
@@ -99,6 +104,7 @@ private:
 
     int         m_specHwPixelFormat{-1};//用户指定硬解码器格式；
     AVBufferRef *m_hwDevContext{nullptr};
+    bool        m_hwDecodecEnable{false};
 
     std::mutex              m_closeMtx;
 };

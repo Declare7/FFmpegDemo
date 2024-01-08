@@ -96,9 +96,14 @@ void VideoInputUI::readFrameThread(VideoInputUI *viPtr)
         unsigned char* framePtr = nullptr;
         VideoInput::PixelFormatType format = VideoInput::PixelFormatYUVJ422P;
         if(viPtr->ui->checkBoxGPU->isChecked())
+        {
             framePtr = viPtr->m_viPtr->readSpecFormatData(format, width, height);
+        }
         else
-            framePtr = viPtr->m_viPtr->readSpecFormatData(VideoInput::PixelFormatBGRA, width, height);
+        {
+            format = VideoInput::PixelFormatBGRA;
+            framePtr = viPtr->m_viPtr->readSpecFormatData(format, width, height);
+        }
 
         if(framePtr == nullptr)
         {
@@ -154,5 +159,11 @@ void VideoInputUI::on_checkBoxGPU_clicked()
 void VideoInputUI::onResizeOpenGLWid(int w, int h)
 {
     m_openglWid->setFixedHeight(h);
+}
+
+
+void VideoInputUI::on_checkBoxHw_clicked()
+{
+    m_viPtr->setHardwareDecodecEnable(ui->checkBoxHw->isChecked());
 }
 

@@ -182,6 +182,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="checkBoxHw">
+        <property name="text">
+         <string>Hardware Decodec</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="checkBoxGPU">
         <property name="minimumSize">
          <size>

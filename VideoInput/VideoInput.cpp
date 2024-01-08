@@ -99,22 +99,10 @@ bool VideoInput::open(const std::string url, std::string inputFormat, std::strin
         m_codecCtx->thread_count = 2;               //使用多个线程加速解码；
 
         //支持硬解码；
-//        if(gHwPixelFormat != AV_PIX_FMT_NONE)
-//        {
-//            printLog("Hw device type: " + std::to_string(gHwDeviceType));
-//            rtn = av_hwdevice_ctx_create(&m_hwDevContext, gHwDeviceType, "", nullptr, 0);
-//            if(rtn == 0)
-//            {
-//                //设置硬解码格式；
-//                m_codecCtx->get_format = get_hw_format;
-//                m_codecCtx->hw_device_ctx = av_buffer_ref(m_hwDevContext);
-//            }
-//            else
-//            {
-//                printErrorInfo(rtn);
-//                gHwPixelFormat = AV_PIX_FMT_NONE;
-//            }
-//        }
+        if(m_hwDecodecEnable)
+        {
+            setupHardwareDecodec();
+        }
 
         //初始化解码器上下文，如果在调用avcodec_alloc_context3时已传入解码器，则参数2可以设置为nullptr；
         rtn = avcodec_open2(m_codecCtx, nullptr, nullptr);
@@ -154,12 +142,16 @@ void VideoInput::close()
     release();
 }
 
-unsigned char *VideoInput::readSpecFormatData(const PixelFormatType &pixelFormat, int &width, int &height)
+unsigned char *VideoInput::readSpecFormatData(PixelFormatType &pixelFormat, int &width, int &height)
 {
     auto frame = readAVFrame();
     if(frame == nullptr)
         return nullptr;
 
+    if(pixelFormat == PixelFormatNone)
+    {
+        pixelFormat = (PixelFormatType)frame->format;
+    }
     AVPixelFormat pixFmt = (AVPixelFormat)pixelFormat;
 
     //已创建的sws context指定的像素格式发生变化;
@@ -290,6 +282,11 @@ unsigned char *VideoInput::readRawData(PixelFormatType &pixelFormat, int &width,
     return m_converBuff;
 }
 
+void VideoInput::setHardwareDecodecEnable(bool enable)
+{
+    m_hwDecodecEnable = enable;
+}
+
 void VideoInput::printErrorInfo(int errorCode)
 {
     if(m_logCallBack == nullptr)
@@ -339,6 +336,35 @@ int VideoInput::getHWDecoderPixelFmt(void *avcodec)
         }
 
         i++;
+    }
+}
+
+void VideoInput::setupHardwareDecodec()
+{
+    if(gHwPixelFormat == AV_PIX_FMT_NONE)
+    {
+        return;
+    }
+
+    printLog("Hw device type: " + std::to_string(gHwDeviceType));
+    int rtn = av_hwdevice_ctx_create(&m_hwDevContext, gHwDeviceType, "", nullptr, 0);
+    if(rtn == 0)
+    {
+        m_hwFrame = av_frame_alloc();
+        if(m_hwFrame == nullptr)
+        {
+            printLog("alloc frame fail!");
+        }
+
+        //设置硬解码格式；
+        m_codecCtx->get_format = get_hw_format;
+        m_codecCtx->hw_device_ctx = av_buffer_ref(m_hwDevContext);
+    }
+    else
+    {
+        printErrorInfo(rtn);
+        gHwPixelFormat = AV_PIX_FMT_NONE;
+        m_hwDecodecEnable = false;
     }
 }
 
@@ -392,9 +418,14 @@ AVFrame *VideoInput::readAVFrame()
     }
 
     //硬解码，帧数据存放在硬件存储上（比如GPU的显存）；
-    if(gHwPixelFormat != AV_PIX_FMT_NONE)
+    if(m_hwDecodecEnable)
     {
-
+        rtn = av_hwframe_transfer_data(m_hwFrame, m_frame, 0);
+        if(rtn< 0)
+        {
+            printErrorInfo(rtn);
+        }
+        return m_hwFrame;
     }
 
     return m_frame;
@@ -412,6 +443,9 @@ void VideoInput::release()
 
     if(m_frame != nullptr)
         av_frame_free(&m_frame);
+
+    if(m_hwFrame != nullptr)
+        av_frame_free(&m_hwFrame);
 
     if(m_converFrame != nullptr)
         av_frame_free(&m_converFrame);

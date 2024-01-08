@@ -40,6 +40,8 @@ private slots:
 
     void onResizeOpenGLWid(int w, int h);
 
+    void on_checkBoxHw_clicked();
+
 private:
     void printLog(QString log);
     void onLogCallback(const std::string &log);
