@@ -29,7 +29,7 @@ VideoInputUI::VideoInputUI(QWidget *parent) :
     {
         ui->comboBoxInput->addItem(cameras.at(i).description());
     }
-    ui->comboBoxInput->addItem("C:/Users/15306/Desktop/ffmpeg/2023-07-21_18-14-54.mp4");
+    ui->comboBoxInput->addItem("C:/Users/15306/Desktop/123.mp4");
 }
 
 VideoInputUI::~VideoInputUI()
