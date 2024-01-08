@@ -69,6 +69,12 @@ public:
     */
     unsigned char *readRawData(PixelFormatType &pixelFormat, int &width, int &height);
 
+    /**
+    * @brief 设置应解码功能的启用状态；
+    * @param enble: true为启用；false：不启用；
+    * @param
+    * @return
+    */
     void setHardwareDecodecEnable(bool enable);
 
 private:

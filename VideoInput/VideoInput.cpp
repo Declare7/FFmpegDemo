@@ -320,7 +320,6 @@ int VideoInput::getHWDecoderPixelFmt(void *avcodec)
             }
             return AV_PIX_FMT_NONE;
         }
-        printLog("Hardware decoder pixel format" + std::to_string(i) + " :" + std::to_string(hwConfig->pix_fmt));
 
         //用户未指定硬解码器则返回第一个；
         if(m_specHwPixelFormat == AV_PIX_FMT_NONE)
